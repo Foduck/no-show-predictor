@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No-Show Risk Predictor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: #e2e8f0;
+        }
+        
+        .app-container {
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        .app-header {
+            max-width: 1400px;
+            margin: 0 auto 32px;
+            text-align: center;
+        }
+        
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        
+        .app-subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+        
+        .mode-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: 2px solid #334155;
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mode-btn:hover {
+            border-color: #60a5fa;
+            color: #60a5fa;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-color: transparent;
+            color: white;
+        }
+        
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 24px;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #334155;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+        
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #475569;
+            color: #94a3b8;
+        }
+        
+        .btn-outline:hover {
+            border-color: #60a5fa;
+            color: #60a5fa;
+        }
+        
+        .collapsible-section {
+            margin-bottom: 12px;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(51, 65, 85, 0.5);
+            border: none;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .section-header:hover {
+            background: rgba(51, 65, 85, 0.8);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        
+        .section-content {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .field-input {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .field-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        
+        .critical-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-radius: 4px;
+        }
+        
+        .field-select {
+            padding: 10px 12px;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        
+        .field-select:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+        
+        .field-select.missing {
+            border-color: #f59e0b;
+        }
+        
+        .field-description {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .results-display {
+            padding: 24px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+            border: 2px solid;
+        }
+        
+        .results-display.result-low {
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        
+        .results-display.result-moderate {
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        
+        .results-display.result-high {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        .results-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .risk-gauge {
+            width: 160px;
+            flex-shrink: 0;
+        }
+        
+        .gauge-svg {
+            width: 100%;
+            height: auto;
+        }
+        
+        .gauge-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #64748b;
+            padding: 0 10px;
+        }
+        
+        .score-details {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .score-number {
+            font-size: 4rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .result-low .score-number { color: #10b981; }
+        .result-moderate .score-number { color: #f59e0b; }
+        .result-high .score-number { color: #ef4444; }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .category-badge.result-low {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+        
+        .category-badge.result-moderate {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+        
+        .category-badge.result-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+        
+        .confidence-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .confidence-indicator.confidence-high { color: #10b981; }
+        .confidence-indicator.confidence-medium { color: #f59e0b; }
+        .confidence-indicator.confidence-low { color: #ef4444; }
+        
+        .results-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .results-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .drivers-section h4,
+        .interventions-section h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            color: #94a3b8;
+        }
+        
+        .drivers-list {
+            list-style: none;
+        }
+        
+        .drivers-list li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        
+        .driver-label {
+            flex: 1;
+            color: #cbd5e1;
+            min-width: 100px;
+        }
+        
+        .driver-value {
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+        
+        .driver-points {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .driver-risk .driver-points {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+        
+        .driver-protective .driver-points {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+        
+        .interventions-list {
+            list-style: none;
+        }
+        
+        .interventions-list li {
+            padding: 10px 12px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .disclaimer {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: #fbbf24;
+        }
+        
+        .batch-upload-area {
+            border: 2px dashed #475569;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .batch-upload-area:hover {
+            border-color: #60a5fa;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            color: #64748b;
+        }
+        
+        .upload-text {
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        
+        .upload-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .batch-error {
+            padding: 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            color: #f87171;
+            margin-top: 16px;
+        }
+        
+        .batch-summary h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 900px) {
+            .summary-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .stat-card {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #e2e8f0;
+        }
+        
+        .stat-card.low .stat-value { color: #10b981; }
+        .stat-card.moderate .stat-value { color: #f59e0b; }
+        .stat-card.high .stat-value { color: #ef4444; }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .distribution-chart {
+            margin-bottom: 24px;
+        }
+        
+        .distribution-chart h4 {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        
+        .bar-chart {
+            display: flex;
+            height: 40px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #1e293b;
+        }
+        
+        .bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            transition: width 0.3s;
+        }
+        
+        .bar.low { background: #10b981; }
+        .bar.moderate { background: #f59e0b; }
+        .bar.high { background: #ef4444; }
+        
+        .top-factors h4 {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        
+        .top-factors ul {
+            list-style: none;
+        }
+        
+        .top-factors li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+        
+        .factor-name {
+            color: #cbd5e1;
+        }
+        
+        .factor-count {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        .test-cases-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            max-width: 90vw;
+            height: 100vh;
+            background: #1e293b;
+            border-left: 1px solid #334155;
+            padding: 24px;
+            overflow-y: auto;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+        
+        .test-cases-panel.open {
+            transform: translateX(0);
+        }
+        
+        .test-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .test-case-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .test-case-item {
+            padding: 14px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .test-case-item:hover {
+            background: rgba(51, 65, 85, 0.8);
+        }
+        
+        .test-case-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .test-case-expected {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        
+        .empty-state svg {
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            vertical-align: -0.125em;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo, useCallback } = React;
+
+        // ============================================================================
+        // CONFIGURATION
+        // ============================================================================
+        const CONFIG = {
+            thresholds: { low: 29, moderate: 59, high: 100 },
+            baseScore: 15,
+            weights: {
+                patientType: { new: 12, established: 0 },
+                ageBand: { '<18': 5, '18-24': 15, '25-34': 10, '35-44': 5, '45-54': 0, '55-64': -5, '65+': -8 },
+                leadTime: { 'same-day': -5, '1-2 days': 0, '3-7 days': 5, '8-14 days': 10, '15-30 days': 18, '>30 days': 25 },
+                appointmentType: { 'eval/intake': 8, 'follow-up': 0, 'therapy': -3, 'lab/other': 5 },
+                modality: { 'in-person': 5, 'telehealth': -10 },
+                timeOfDay: { 'early AM (7-9)': 8, 'mid-morning (9-11)': 0, 'midday (11-1)': 3, 'afternoon (1-4)': 0, 'evening (4-7)': 5 },
+                dayOfWeek: { 'Monday': 8, 'Tuesday': 0, 'Wednesday': -2, 'Thursday': 0, 'Friday': 5, 'Saturday': 3, 'Sunday': 10 },
+                priorCompletedVisits: { '0': 10, '1-2': 5, '3-5': 0, '6-10': -5, '10+': -10 },
+                priorNoShows: { '0': -10, '1': 10, '2-3': 25, '4+': 40 },
+                priorLateCancels: { '0': -3, '1': 5, '2-3': 12, '4+': 20 },
+                recentMissed: { 'yes': 20, 'no': 0 },
+                confirmationStatus: { 'confirmed': -15, 'attempted-not-reached': 10, 'not-confirmed': 15, 'n/a': 5 },
+                reminderSMS: { 'yes': -5, 'no': 5 },
+                reminderEmail: { 'yes': -3, 'no': 2 },
+                reminderPhone: { 'yes': -5, 'no': 3 },
+                transportationBarrier: { 'none': 0, 'possible': 10, 'known': 20 },
+                distanceBucket: { '<5 mi': 0, '5-15 mi': 5, '15-30 mi': 12, '30+ mi': 20, 'unknown': 3 },
+                insuranceClass: { 'commercial': -5, 'medicare': -3, 'medicaid': 8, 'self-pay': 12, 'other': 3 },
+                copayBucket: { '$0': 0, '$1-25': 2, '$26-50': 5, '$51-100': 10, '$100+': 15 },
+                languageBarrier: { 'none': 0, 'possible': 5, 'known': 10 },
+                complexityIndicator: { 'low': 0, 'medium': 5, 'high': 12, 'unknown': 0 },
+                schedulingFriction: { 'easy': -5, 'moderate': 5, 'hard': 15 },
+                providerContinuity: { 'established': -8, 'new': 8 },
+                weatherRisk: { 'none': 0, 'possible': 5, 'high': 15 }
+            },
+            missingPenalties: { priorNoShows: 5, priorLateCancels: 3, confirmationStatus: 5, distanceBucket: 2, insuranceClass: 2 },
+            confidenceLevels: {
+                high: { maxMissing: 1, label: 'High', color: 'green' },
+                medium: { maxMissing: 3, label: 'Medium', color: 'yellow' },
+                low: { maxMissing: Infinity, label: 'Low', color: 'red' }
+            },
+            criticalFields: ['priorNoShows', 'priorLateCancels', 'confirmationStatus', 'priorCompletedVisits', 'recentMissed']
+        };
+
+        // Interventions
+        const INTERVENTIONS = {
+            low: { standard: ['Send standard appointment reminder (24-48 hours prior)', 'Include appointment details and cancellation policy', 'No additional intervention required'] },
+            moderate: {
+                standard: ['Confirm appointment 48 hours in advance via preferred channel', 'Offer telehealth option if applicable', 'Send dual reminders (SMS + email)', 'Include easy reschedule link in communications'],
+                conditional: {
+                    transportationBarrier: ['Discuss transportation assistance options', 'Offer telehealth alternative'],
+                    leadTime: ['Consider earlier reminder (72 hours)', 'Send mid-point check-in for long lead times'],
+                    priorNoShows: ['Document conversation about attendance expectations', 'Discuss barriers to attendance'],
+                    confirmationStatus: ['Attempt phone confirmation', 'Document multiple contact attempts']
+                }
+            },
+            high: {
+                standard: ['Same-day confirmation call required', 'Activate waitlist backfill strategy', 'Consider double-booking slot if policy allows', 'Document all contact attempts thoroughly'],
+                conditional: {
+                    transportationBarrier: ['Coordinate transportation assistance', 'Strong telehealth recommendation', 'Consider home visit if available'],
+                    priorNoShows: ['Review attendance agreement', 'Consider deposit policy if allowed', 'Schedule at historically reliable time slots'],
+                    insuranceClass: ['Verify insurance status before appointment', 'Discuss payment plan options'],
+                    copayBucket: ['Discuss financial assistance programs', 'Verify payment method in advance'],
+                    providerContinuity: ['Brief provider on patient history', 'Consider warm handoff call']
+                }
+            }
+        };
+
+        // Field definitions
+        const FIELD_DEFINITIONS = {
+            patientType: { label: 'Patient Type', description: 'Whether the patient has been seen at this clinic before', options: ['new', 'established'], category: 'patient' },
+            ageBand: { label: 'Age Band', description: 'Patient age range (de-identified)', options: ['<18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'], category: 'patient' },
+            leadTime: { label: 'Appointment Lead Time', description: 'Days between scheduling and appointment', options: ['same-day', '1-2 days', '3-7 days', '8-14 days', '15-30 days', '>30 days'], category: 'appointment' },
+            appointmentType: { label: 'Appointment Type', description: 'Category of visit', options: ['eval/intake', 'follow-up', 'therapy', 'lab/other'], category: 'appointment' },
+            modality: { label: 'Visit Modality', description: 'In-person or remote visit', options: ['in-person', 'telehealth'], category: 'appointment' },
+            timeOfDay: { label: 'Time of Day', description: 'Scheduled time slot bucket', options: ['early AM (7-9)', 'mid-morning (9-11)', 'midday (11-1)', 'afternoon (1-4)', 'evening (4-7)'], category: 'appointment' },
+            dayOfWeek: { label: 'Day of Week', description: 'Scheduled day', options: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], category: 'appointment' },
+            priorCompletedVisits: { label: 'Prior Completed Visits', description: 'Number of successfully completed visits', options: ['0', '1-2', '3-5', '6-10', '10+'], category: 'history', critical: true },
+            priorNoShows: { label: 'Prior No-Shows', description: 'Historical no-show count', options: ['0', '1', '2-3', '4+'], category: 'history', critical: true },
+            priorLateCancels: { label: 'Prior Late Cancellations', description: 'Historical late cancellation count', options: ['0', '1', '2-3', '4+'], category: 'history', critical: true },
+            recentMissed: { label: 'Recent Missed (90 days)', description: 'Any no-show or late cancel in last 90 days', options: ['yes', 'no'], category: 'history', critical: true },
+            confirmationStatus: { label: 'Confirmation Status', description: 'Current confirmation state', options: ['confirmed', 'attempted-not-reached', 'not-confirmed', 'n/a'], category: 'communication', critical: true },
+            reminderSMS: { label: 'SMS Reminder Available', description: 'Can receive SMS reminders', options: ['yes', 'no'], category: 'communication' },
+            reminderEmail: { label: 'Email Reminder Available', description: 'Can receive email reminders', options: ['yes', 'no'], category: 'communication' },
+            reminderPhone: { label: 'Phone Reminder Available', description: 'Can receive phone reminders', options: ['yes', 'no'], category: 'communication' },
+            transportationBarrier: { label: 'Transportation Barrier', description: 'Known or suspected transportation challenges', options: ['none', 'possible', 'known'], category: 'barriers' },
+            distanceBucket: { label: 'Distance to Clinic', description: 'Approximate travel distance', options: ['<5 mi', '5-15 mi', '15-30 mi', '30+ mi', 'unknown'], category: 'barriers' },
+            insuranceClass: { label: 'Insurance Class', description: 'Insurance type category', options: ['commercial', 'medicare', 'medicaid', 'self-pay', 'other'], category: 'financial' },
+            copayBucket: { label: 'Copay Amount', description: 'Expected out-of-pocket cost', options: ['$0', '$1-25', '$26-50', '$51-100', '$100+'], category: 'financial' },
+            languageBarrier: { label: 'Language Barrier', description: 'Communication challenges indicator', options: ['none', 'possible', 'known'], category: 'barriers' },
+            complexityIndicator: { label: 'Complexity Level', description: 'Behavioral health/SUD complexity (non-diagnostic)', options: ['low', 'medium', 'high', 'unknown'], category: 'clinical' },
+            schedulingFriction: { label: 'Scheduling Friction', description: 'Difficulty in scheduling process', options: ['easy', 'moderate', 'hard'], category: 'appointment' },
+            providerContinuity: { label: 'Provider Relationship', description: 'New or established provider', options: ['established', 'new'], category: 'patient' },
+            weatherRisk: { label: 'Weather/Travel Risk', description: 'External travel conditions', options: ['none', 'possible', 'high'], category: 'barriers' }
+        };
+
+        const CATEGORIES = {
+            patient: { label: 'Patient Info' },
+            appointment: { label: 'Appointment Details' },
+            history: { label: 'Attendance History' },
+            communication: { label: 'Communication' },
+            barriers: { label: 'Barriers' },
+            financial: { label: 'Financial' },
+            clinical: { label: 'Clinical' }
+        };
+
+        // Test cases
+        const SYNTHETIC_TEST_CASES = [
+            { name: 'Low Risk - Established Patient', inputs: { patientType: 'established', ageBand: '55-64', leadTime: '3-7 days', appointmentType: 'follow-up', modality: 'in-person', timeOfDay: 'mid-morning (9-11)', dayOfWeek: 'Wednesday', priorCompletedVisits: '10+', priorNoShows: '0', priorLateCancels: '0', recentMissed: 'no', confirmationStatus: 'confirmed', reminderSMS: 'yes', reminderEmail: 'yes', reminderPhone: 'yes', transportationBarrier: 'none', distanceBucket: '<5 mi', insuranceClass: 'commercial', copayBucket: '$1-25', languageBarrier: 'none', complexityIndicator: 'low', schedulingFriction: 'easy', providerContinuity: 'established', weatherRisk: 'none' }, expectedCategory: 'low' },
+            { name: 'High Risk - New Patient with History', inputs: { patientType: 'new', ageBand: '18-24', leadTime: '>30 days', appointmentType: 'eval/intake', modality: 'in-person', timeOfDay: 'early AM (7-9)', dayOfWeek: 'Monday', priorCompletedVisits: '0', priorNoShows: '4+', priorLateCancels: '2-3', recentMissed: 'yes', confirmationStatus: 'not-confirmed', reminderSMS: 'no', reminderEmail: 'no', reminderPhone: 'no', transportationBarrier: 'known', distanceBucket: '30+ mi', insuranceClass: 'self-pay', copayBucket: '$100+', languageBarrier: 'known', complexityIndicator: 'high', schedulingFriction: 'hard', providerContinuity: 'new', weatherRisk: 'high' }, expectedCategory: 'high' },
+            { name: 'Moderate Risk - Telehealth Mitigation', inputs: { patientType: 'established', ageBand: '25-34', leadTime: '15-30 days', appointmentType: 'therapy', modality: 'telehealth', timeOfDay: 'afternoon (1-4)', dayOfWeek: 'Tuesday', priorCompletedVisits: '3-5', priorNoShows: '1', priorLateCancels: '1', recentMissed: 'no', confirmationStatus: 'attempted-not-reached', reminderSMS: 'yes', reminderEmail: 'yes', reminderPhone: 'no', transportationBarrier: 'possible', distanceBucket: '15-30 mi', insuranceClass: 'commercial', copayBucket: '$26-50', languageBarrier: 'none', complexityIndicator: 'medium', schedulingFriction: 'moderate', providerContinuity: 'established', weatherRisk: 'none' }, expectedCategory: 'moderate' },
+            { name: 'Low Risk - Senior Medicare Patient', inputs: { patientType: 'established', ageBand: '65+', leadTime: '1-2 days', appointmentType: 'follow-up', modality: 'in-person', timeOfDay: 'mid-morning (9-11)', dayOfWeek: 'Thursday', priorCompletedVisits: '6-10', priorNoShows: '0', priorLateCancels: '0', recentMissed: 'no', confirmationStatus: 'confirmed', reminderSMS: 'yes', reminderEmail: 'no', reminderPhone: 'yes', transportationBarrier: 'none', distanceBucket: '5-15 mi', insuranceClass: 'medicare', copayBucket: '$0', languageBarrier: 'none', complexityIndicator: 'low', schedulingFriction: 'easy', providerContinuity: 'established', weatherRisk: 'none' }, expectedCategory: 'low' },
+            { name: 'High Risk - Multiple No-Shows', inputs: { patientType: 'established', ageBand: '25-34', leadTime: '15-30 days', appointmentType: 'therapy', modality: 'in-person', timeOfDay: 'evening (4-7)', dayOfWeek: 'Friday', priorCompletedVisits: '3-5', priorNoShows: '4+', priorLateCancels: '4+', recentMissed: 'yes', confirmationStatus: 'not-confirmed', reminderSMS: 'yes', reminderEmail: 'no', reminderPhone: 'no', transportationBarrier: 'possible', distanceBucket: '15-30 mi', insuranceClass: 'medicaid', copayBucket: '$0', languageBarrier: 'none', complexityIndicator: 'medium', schedulingFriction: 'moderate', providerContinuity: 'established', weatherRisk: 'none' }, expectedCategory: 'high' }
+        ];
+
+        // ============================================================================
+        // SCORING ENGINE
+        // ============================================================================
+        function calculateRiskScore(inputs) {
+            let score = CONFIG.baseScore;
+            const contributions = [];
+            let missingCriticalCount = 0;
+
+            Object.entries(FIELD_DEFINITIONS).forEach(([field, def]) => {
+                const value = inputs[field];
+                const weights = CONFIG.weights[field];
+
+                if (!value || value === '' || value === 'unknown') {
+                    if (def.critical) missingCriticalCount++;
+                    if (CONFIG.missingPenalties[field]) {
+                        score += CONFIG.missingPenalties[field];
+                        contributions.push({ field, label: def.label, value: 'missing', points: CONFIG.missingPenalties[field], isMissing: true });
+                    }
+                } else if (weights && weights[value] !== undefined) {
+                    const points = weights[value];
+                    score += points;
+                    if (points !== 0) {
+                        contributions.push({ field, label: def.label, value, points, isMissing: false });
+                    }
+                }
+            });
+
+            score = Math.max(0, Math.min(100, score));
+
+            let category;
+            if (score <= CONFIG.thresholds.low) category = 'low';
+            else if (score <= CONFIG.thresholds.moderate) category = 'moderate';
+            else category = 'high';
+
+            let confidence;
+            if (missingCriticalCount <= CONFIG.confidenceLevels.high.maxMissing) confidence = CONFIG.confidenceLevels.high;
+            else if (missingCriticalCount <= CONFIG.confidenceLevels.medium.maxMissing) confidence = CONFIG.confidenceLevels.medium;
+            else confidence = CONFIG.confidenceLevels.low;
+
+            contributions.sort((a, b) => Math.abs(b.points) - Math.abs(a.points));
+            const topDrivers = contributions.slice(0, 5);
+            const interventions = generateInterventions(category, inputs, topDrivers);
+
+            return { score: Math.round(score), category, confidence, topDrivers, interventions, missingCriticalCount };
+        }
+
+        function generateInterventions(category, inputs, topDrivers) {
+            const interventionSet = INTERVENTIONS[category];
+            const result = [...interventionSet.standard];
+
+            if (interventionSet.conditional) {
+                topDrivers.forEach(driver => {
+                    if (interventionSet.conditional[driver.field] && driver.points > 5) {
+                        result.push(...interventionSet.conditional[driver.field]);
+                    }
+                });
+            }
+            return [...new Set(result)];
+        }
+
+        // CSV functions
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, ''));
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                const row = {};
+                headers.forEach((header, idx) => {
+                    const fieldName = Object.keys(FIELD_DEFINITIONS).find(f => f.toLowerCase() === header || FIELD_DEFINITIONS[f].label.toLowerCase().replace(/\s+/g, '') === header);
+                    if (fieldName) row[fieldName] = values[idx] || '';
+                });
+                if (Object.keys(row).length > 0) rows.push(row);
+            }
+            return rows;
+        }
+
+        function generateCSVTemplate() {
+            const headers = Object.keys(FIELD_DEFINITIONS).join(',');
+            const exampleRow = Object.keys(FIELD_DEFINITIONS).map(f => FIELD_DEFINITIONS[f].options[0]).join(',');
+            return `${headers}\n${exampleRow}`;
+        }
+
+        function generateResultsCSV(results) {
+            const headers = ['row_id', ...Object.keys(FIELD_DEFINITIONS), 'risk_score', 'risk_category', 'confidence', 'top_driver_1', 'top_driver_2', 'top_driver_3', 'interventions'].join(',');
+            const rows = results.map((r, idx) => {
+                const inputValues = Object.keys(FIELD_DEFINITIONS).map(f => r.inputs[f] || '');
+                const drivers = r.result.topDrivers.slice(0, 3).map(d => `${d.label}: ${d.points > 0 ? '+' : ''}${d.points}`);
+                while (drivers.length < 3) drivers.push('');
+                return [idx + 1, ...inputValues, r.result.score, r.result.category, r.result.confidence.label, ...drivers, `"${r.result.interventions.join('; ')}"`].join(',');
+            });
+            return `${headers}\n${rows.join('\n')}`;
+        }
+
+        // ============================================================================
+        // COMPONENTS
+        // ============================================================================
+        function RiskGauge({ score, category }) {
+            const getColor = () => {
+                if (category === 'low') return '#10b981';
+                if (category === 'moderate') return '#f59e0b';
+                return '#ef4444';
+            };
+            const rotation = (score / 100) * 180 - 90;
+
+            return (
+                <div className="risk-gauge">
+                    <svg viewBox="0 0 200 120" className="gauge-svg">
+                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeLinecap="round" />
+                        <path d="M 20 100 A 80 80 0 0 1 68 35" fill="none" stroke="#10b981" strokeWidth="16" strokeLinecap="round" />
+                        <path d="M 68 35 A 80 80 0 0 1 132 35" fill="none" stroke="#f59e0b" strokeWidth="16" />
+                        <path d="M 132 35 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" strokeWidth="16" strokeLinecap="round" />
+                        <line x1="100" y1="100" x2="100" y2="30" stroke={getColor()} strokeWidth="4" strokeLinecap="round" style={{ transform: `rotate(${rotation}deg)`, transformOrigin: '100px 100px' }} />
+                        <circle cx="100" cy="100" r="8" fill={getColor()} />
+                    </svg>
+                    <div className="gauge-labels">
+                        <span>Low</span>
+                        <span>Moderate</span>
+                        <span>High</span>
+                    </div>
+                </div>
+            );
+        }
+
+        function CollapsibleSection({ title, children, defaultOpen = false }) {
+            const [isOpen, setIsOpen] = useState(defaultOpen);
+            return (
+                <div className="collapsible-section">
+                    <button className="section-header" onClick={() => setIsOpen(!isOpen)}>
+                        <div className="section-title"><span>{title}</span></div>
+                        <span>{isOpen ? '▲' : '▼'}</span>
+                    </button>
+                    {isOpen && <div className="section-content">{children}</div>}
+                </div>
+            );
+        }
+
+        function FieldInput({ field, value, onChange }) {
+            const def = FIELD_DEFINITIONS[field];
+            return (
+                <div className="field-input">
+                    <label className="field-label">
+                        <span>{def.label}</span>
+                        {def.critical && <span className="critical-badge">Required</span>}
+                    </label>
+                    <select value={value || ''} onChange={(e) => onChange(field, e.target.value)} className={`field-select ${def.critical && !value ? 'missing' : ''}`}>
+                        <option value="">Select...</option>
+                        {def.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                    <p className="field-description">{def.description}</p>
+                </div>
+            );
+        }
+
+        function ResultsDisplay({ result }) {
+            if (!result) return null;
+            const getCategoryStyle = () => `result-${result.category}`;
+            const getConfidenceStyle = () => {
+                if (result.confidence.color === 'green') return 'confidence-high';
+                if (result.confidence.color === 'yellow') return 'confidence-medium';
+                return 'confidence-low';
+            };
+
+            return (
+                <div className={`results-display ${getCategoryStyle()}`}>
+                    <div className="results-header">
+                        <RiskGauge score={result.score} category={result.category} />
+                        <div className="score-details">
+                            <div className="score-number">{result.score}</div>
+                            <div className={`category-badge ${getCategoryStyle()}`}>
+                                {result.category.charAt(0).toUpperCase() + result.category.slice(1)} Risk
+                            </div>
+                            <div className={`confidence-indicator ${getConfidenceStyle()}`}>
+                                <span>🛡️ {result.confidence.label} Confidence</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="results-sections">
+                        <div className="drivers-section">
+                            <h4>⚡ Top Risk Drivers</h4>
+                            <ul className="drivers-list">
+                                {result.topDrivers.map((driver, idx) => (
+                                    <li key={idx} className={driver.points > 0 ? 'driver-risk' : 'driver-protective'}>
+                                        <span className="driver-label">{driver.label}</span>
+                                        <span className="driver-value">{driver.value}</span>
+                                        <span className="driver-points">{driver.points > 0 ? '+' : ''}{driver.points} pts</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="interventions-section">
+                            <h4>✓ Recommended Interventions</h4>
+                            <ul className="interventions-list">
+                                {result.interventions.map((intervention, idx) => <li key={idx}>{intervention}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="disclaimer">
+                        <span>⚠️</span>
+                        <span>This risk score is a decision-support tool only, not a guarantee of patient behavior. Clinical judgment should always be used when determining appropriate interventions.</span>
+                    </div>
+                </div>
+            );
+        }
+
+        function BatchSummary({ results }) {
+            if (!results || results.length === 0) return null;
+
+            const summary = useMemo(() => {
+                const categories = { low: 0, moderate: 0, high: 0 };
+                const driverCounts = {};
+                let totalScore = 0;
+
+                results.forEach(r => {
+                    categories[r.result.category]++;
+                    totalScore += r.result.score;
+                    r.result.topDrivers.forEach(d => {
+                        if (d.points > 0) driverCounts[d.label] = (driverCounts[d.label] || 0) + 1;
+                    });
+                });
+
+                const topRiskFactors = Object.entries(driverCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                return { total: results.length, categories, avgScore: Math.round(totalScore / results.length), topRiskFactors };
+            }, [results]);
+
+            return (
+                <div className="batch-summary">
+                    <h3>📊 Batch Summary</h3>
+                    <div className="summary-stats">
+                        <div className="stat-card"><div className="stat-value">{summary.total}</div><div className="stat-label">Total Records</div></div>
+                        <div className="stat-card"><div className="stat-value">{summary.avgScore}</div><div className="stat-label">Avg Risk Score</div></div>
+                        <div className="stat-card low"><div className="stat-value">{summary.categories.low}</div><div className="stat-label">Low Risk</div></div>
+                        <div className="stat-card moderate"><div className="stat-value">{summary.categories.moderate}</div><div className="stat-label">Moderate Risk</div></div>
+                        <div className="stat-card high"><div className="stat-value">{summary.categories.high}</div><div className="stat-label">High Risk</div></div>
+                    </div>
+                    <div className="distribution-chart">
+                        <h4>Risk Distribution</h4>
+                        <div className="bar-chart">
+                            <div className="bar low" style={{ width: `${(summary.categories.low / summary.total) * 100}%` }}>{summary.categories.low > 0 && `${Math.round((summary.categories.low / summary.total) * 100)}%`}</div>
+                            <div className="bar moderate" style={{ width: `${(summary.categories.moderate / summary.total) * 100}%` }}>{summary.categories.moderate > 0 && `${Math.round((summary.categories.moderate / summary.total) * 100)}%`}</div>
+                            <div className="bar high" style={{ width: `${(summary.categories.high / summary.total) * 100}%` }}>{summary.categories.high > 0 && `${Math.round((summary.categories.high / summary.total) * 100)}%`}</div>
+                        </div>
+                    </div>
+                    <div className="top-factors">
+                        <h4>Top Risk Factors Across Batch</h4>
+                        <ul>{summary.topRiskFactors.map(([factor, count], idx) => <li key={idx}><span className="factor-name">{factor}</span><span className="factor-count">{count} patients</span></li>)}</ul>
+                    </div>
+                </div>
+            );
+        }
+
+        // ============================================================================
+        // MAIN APP
+        // ============================================================================
+        function NoShowPredictor() {
+            const [mode, setMode] = useState('single');
+            const [inputs, setInputs] = useState({});
+            const [result, setResult] = useState(null);
+            const [batchResults, setBatchResults] = useState(null);
+            const [batchError, setBatchError] = useState(null);
+            const [showTests, setShowTests] = useState(false);
+
+            const handleInputChange = useCallback((field, value) => {
+                setInputs(prev => ({ ...prev, [field]: value }));
+                setResult(null);
+            }, []);
+
+            const handleCalculate = useCallback(() => {
+                const result = calculateRiskScore(inputs);
+                setResult(result);
+            }, [inputs]);
+
+            const handleReset = useCallback(() => {
+                setInputs({});
+                setResult(null);
+            }, []);
+
+            const handleFileUpload = useCallback((e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const text = event.target?.result;
+                        const rows = parseCSV(text);
+                        if (rows.length === 0) {
+                            setBatchError('No valid data found in CSV.');
+                            setBatchResults(null);
+                            return;
+                        }
+                        const results = rows.map(row => ({ inputs: row, result: calculateRiskScore(row) }));
+                        setBatchResults(results);
+                        setBatchError(null);
+                    } catch (err) {
+                        setBatchError('Error parsing CSV: ' + err.message);
+                        setBatchResults(null);
+                    }
+                };
+                reader.readAsText(file);
+            }, []);
+
+            const handleDownloadTemplate = useCallback(() => {
+                const csv = generateCSVTemplate();
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'no_show_risk_template.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+            }, []);
+
+            const handleDownloadResults = useCallback(() => {
+                if (!batchResults) return;
+                const csv = generateResultsCSV(batchResults);
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'no_show_risk_results.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+            }, [batchResults]);
+
+            const handleLoadTestCase = useCallback((testCase) => {
+                setInputs(testCase.inputs);
+                setResult(null);
+                setShowTests(false);
+            }, []);
+
+            const groupedFields = useMemo(() => {
+                const groups = {};
+                Object.entries(FIELD_DEFINITIONS).forEach(([field, def]) => {
+                    if (!groups[def.category]) groups[def.category] = [];
+                    groups[def.category].push(field);
+                });
+                return groups;
+            }, []);
+
+            return (
+                <div className="app-container">
+                    <header className="app-header">
+                        <h1 className="app-title">No-Show Risk Predictor</h1>
+                        <p className="app-subtitle">PHI-Safe Decision Support Tool for Outpatient Clinics</p>
+                        <div className="mode-toggle">
+                            <button className={`mode-btn ${mode === 'single' ? 'active' : ''}`} onClick={() => setMode('single')}>👤 Single Patient</button>
+                            <button className={`mode-btn ${mode === 'batch' ? 'active' : ''}`} onClick={() => setMode('batch')}>👥 Batch Upload</button>
+                        </div>
+                    </header>
+
+                    <main className="main-content">
+                        {mode === 'single' ? (
+                            <>
+                                <div className="panel">
+                                    <div className="panel-header">
+                                        <h2 className="panel-title">👤 Patient Risk Factors</h2>
+                                        <div className="action-buttons">
+                                            <button className="btn btn-outline" onClick={() => setShowTests(true)}>📋 Test Cases</button>
+                                            <button className="btn btn-secondary" onClick={handleReset}>🔄 Reset</button>
+                                        </div>
+                                    </div>
+                                    {Object.entries(CATEGORIES).map(([category, catDef]) => (
+                                        <CollapsibleSection key={category} title={catDef.label} defaultOpen={category === 'history'}>
+                                            {groupedFields[category]?.map(field => <FieldInput key={field} field={field} value={inputs[field]} onChange={handleInputChange} />)}
+                                        </CollapsibleSection>
+                                    ))}
+                                    <button className="btn btn-primary" onClick={handleCalculate} style={{ width: '100%', marginTop: '16px' }}>⚡ Calculate Risk Score</button>
+                                </div>
+                                <div className="panel">
+                                    <div className="panel-header"><h2 className="panel-title">📊 Risk Assessment Results</h2></div>
+                                    {result ? <ResultsDisplay result={result} /> : (
+                                        <div className="empty-state">
+                                            <p>Enter patient risk factors and click "Calculate Risk Score" to see results.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="panel">
+                                    <div className="panel-header">
+                                        <h2 className="panel-title">📤 Batch Upload</h2>
+                                        <button className="btn btn-outline" onClick={handleDownloadTemplate}>⬇️ Download Template</button>
+                                    </div>
+                                    <label className="batch-upload-area">
+                                        <input type="file" accept=".csv" onChange={handleFileUpload} className="file-input" />
+                                        <div className="upload-icon" style={{ fontSize: '48px' }}>📁</div>
+                                        <p className="upload-text">Click to upload or drag and drop</p>
+                                        <p className="upload-hint">CSV file with patient risk factors</p>
+                                    </label>
+                                    {batchError && <div className="batch-error">⚠️ {batchError}</div>}
+                                    {batchResults && (
+                                        <>
+                                            <BatchSummary results={batchResults} />
+                                            <button className="btn btn-primary" onClick={handleDownloadResults} style={{ width: '100%', marginTop: '16px' }}>⬇️ Download Results CSV</button>
+                                        </>
+                                    )}
+                                </div>
+                                <div className="panel">
+                                    <div className="panel-header"><h2 className="panel-title">ℹ️ Batch Processing Guide</h2></div>
+                                    <div style={{ color: '#94a3b8', lineHeight: 1.7 }}>
+                                        <h4 style={{ color: '#e2e8f0', marginBottom: '12px' }}>How to Use Batch Mode</h4>
+                                        <ol style={{ paddingLeft: '20px', marginBottom: '20px' }}>
+                                            <li>Download the CSV template using the button above</li>
+                                            <li>Fill in patient risk factors (one row per patient)</li>
+                                            <li>Upload your completed CSV file</li>
+                                            <li>Review the summary dashboard</li>
+                                            <li>Download results with scores and interventions</li>
+                                        </ol>
+                                        <div className="disclaimer">
+                                            <span>⚠️</span>
+                                            <span>Only use de-identified, PHI-safe data. Do not include names, dates of birth, addresses, phone numbers, or any other protected health information.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </main>
+
+                    <div className={`overlay ${showTests ? 'open' : ''}`} onClick={() => setShowTests(false)} />
+                    <div className={`test-cases-panel ${showTests ? 'open' : ''}`}>
+                        <div className="test-case-header">
+                            <h3>Sample Test Cases</h3>
+                            <button className="close-btn" onClick={() => setShowTests(false)}>✕</button>
+                        </div>
+                        {SYNTHETIC_TEST_CASES.map((tc, idx) => (
+                            <div key={idx} className="test-case-item" onClick={() => handleLoadTestCase(tc)}>
+                                <div className="test-case-name">{tc.name}</div>
+                                <div className="test-case-expected">Expected: {tc.expectedCategory.charAt(0).toUpperCase() + tc.expectedCategory.slice(1)} Risk</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<NoShowPredictor />, document.getElementById('root'));
+    </script>
+</body>
+</html>
